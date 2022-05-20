@@ -63,3 +63,28 @@ surfacehex_mapping = {
     'shape_area': 'SHAPE_Area',
     'geom': 'MULTIPOLYGON',
 }
+
+class UAVrouteInput(models.Model):
+    objectid = models.IntegerField(null=True)
+    pathcost = models.FloatField(null=True)
+    destid = models.IntegerField(null=True)
+    startid = models.IntegerField(null=True)
+    shape_length = models.FloatField(null=True)
+    geom = models.MultiLineStringField(srid=4326, null=True)
+
+    def __str__(self):
+        return str(self.objectid)
+
+# Auto-generated `LayerMapping` dictionary for UAVrouteInput model
+uavrouteinput_mapping = {
+    'objectid': 'OBJECTID',
+    'pathcost': 'PathCost',
+    'destid': 'DestID',
+    'startid': 'StartID',
+    'shape_length': 'Shape_Length',
+    'inline_fid': 'InLine_FID',
+    'simlnflag': 'SimLnFlag',
+    'maxsimptol': 'MaxSimpTol',
+    'minsimptol': 'MinSimpTol',
+    'geom': 'MULTILINESTRING',
+}
