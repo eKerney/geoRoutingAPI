@@ -95,7 +95,7 @@ class RouteModelLineView(viewsets.ModelViewSet):
     print(f'request: {request}')
     queryset = RouteModelLineString.objects.all()
     serializer_class = RouteLineSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    #permission_classes = [permissions.IsAuthenticated]
     
     def list(self, request):
         queryset = RouteModelLineString.objects.all()
@@ -139,7 +139,7 @@ class RouteModelLineView(viewsets.ModelViewSet):
         # GeoJSON = { "type": "FeatureCollection", "features": [] }
         # GeoJSON["features"].append(serializer.data)
 
-        return Response(GeoJSONoutput, status=status.HTTP_200_OK)
+        return Response(GeoJSONoutput)
     
 class RouteOutputPointsView(viewsets.ModelViewSet):
     """
