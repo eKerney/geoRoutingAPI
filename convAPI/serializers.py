@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 #from django.contrib.gis import serializers
-from convAPI.models import surfaceHex, UAVrouteInput
+from convAPI.models import surfaceHex, UAVrouteInput, RouteModelLineString, RouteModelOutputPoints
 from django.core.serializers import serialize
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -28,5 +28,17 @@ class UAVrouteInputSerializer(serializers.ModelSerializer):
 class UAVgeoJSONserlializer(GeoFeatureModelSerializer):
     class Meta:
         model = UAVrouteInput
+        geo_field = "geom"
+        fields = '__all__'
+
+class RouteLineSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = RouteModelLineString
+        geo_field = "geom"
+        fields = '__all__'
+
+class RouteOutputPointsSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = RouteModelOutputPoints
         geo_field = "geom"
         fields = '__all__'

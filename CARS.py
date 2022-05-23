@@ -112,9 +112,10 @@ class CARS:
         '''        
         self.loadGeoJSON()
         self.addCARSdata()
-        self.addAglGeoJSON()
-        self.addGeoJSONline()
-        self.saveGeoJSON()
+        self.GeoJSONpts = self.addAglGeoJSON()
+        return self.GeoJSONpts
+        #self.addGeoJSONline()
+        #self.saveGeoJSON()
         
 
     # Load raw GeoJSON file as JSON     
@@ -124,9 +125,10 @@ class CARS:
         Loaded GeoJSON: pendleOR_GeoJSON_17032022144129.geojson
         :rtype: none
         '''         
-        f = open(self.inputPath)
-        self.loadedGeoJSON = json.load(f)
-        print(f'Loaded GeoJSON: {self.inputPath}')
+        #f = open(self.inputPath)
+        #self.loadedGeoJSON = json.load(f)
+        self.loadedGeoJSON = self.inputPath
+        print(f'Loaded GeoJSON: {self.loadedGeoJSON}')
 
     # send in memory GeoJSON to CARS
     def addCARSdata(self):
@@ -143,17 +145,20 @@ class CARS:
             'Authorization': (f'Bearer {self.token}'),
             }
         # Iterate through list of GeoJSON features
-        for i, feature in enumerate(self.loadedGeoJSON['features']):
-            payload = json.dumps({
-                "inVDatum": self.in_type,
-                # "in_prj": self.in_prj,
-                "zUnits": self.z_units,
-                "geometry": self.loadedGeoJSON['features'][i]['geometry']
-            })
-            response = requests.request("POST", url, headers=headers, data=payload)
-            self.carsGeoJSON = json.loads(response.text)
-            # append GeoJSON with CARS attributes to geoJSONarr 
-            self.geoJSONarr.append(self.carsGeoJSON)
+
+        #for i, feature in enumerate(self.loadedGeoJSON['features']):
+        print(f"{self.loadedGeoJSON['geometry']}")
+        payload = json.dumps({
+            "inVDatum": self.in_type,
+            # "in_prj": self.in_prj,
+            "zUnits": self.z_units,
+            "geometry": self.loadedGeoJSON['geometry']
+        })
+        response = requests.request("POST", url, headers=headers, data=payload)
+        self.carsGeoJSON = json.loads(response.text)
+        # append GeoJSON with CARS attributes to geoJSONarr 
+        self.geoJSONarr.append(self.carsGeoJSON)
+        print(self.geoJSONarr)
         print(f'CARS Data Request Success Flight AGL: {self.agl} {self.z_units}')
 
     # Process CARS GeoJSON into final GeoJSON with altitude, agl, height_above_takeoff
@@ -174,6 +179,7 @@ class CARS:
                     geoJSON['data']['features'][z]['properties']['height_above_takeoff'] = round((self.agl + (feature['properties']['terrainWGS84'] - launchHeight)), 2)
                 self.finalGeoJSON.append(geoJSON['data'])
         print(f'Elevation Calculations Attributes Added')
+        return self.finalGeoJSON[0]
 
     def addGeoJSONline(self):   
         self.geoJSONline = {'type':'FeatureCollection', 'features':[]}

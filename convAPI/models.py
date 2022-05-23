@@ -2,6 +2,45 @@
 from django.contrib.gis.db import models
 #from django.urls import reverse
 
+class RouteModelOutputPoints(models.Model):
+    id = models.CharField(max_length=36, primary_key=True)
+    geoidheight = models.FloatField(null=True)
+    terrainnavd88 = models.FloatField(null=True)
+    terrainwgs84 = models.FloatField(null=True)
+    units = models.CharField(max_length=5, null=True)
+    altitude = models.FloatField(null=True)
+    agl = models.FloatField(null=True)
+    height_above_takeoff = models.FloatField(null=True)
+    geom = models.PointField(srid=4326, null=True)
+
+    def __str__(self):
+        return str(self.objectid)
+
+# Auto-generated `LayerMapping` dictionary for RouteModelOutputPoints model
+routemodeloutputpoints_mapping = {
+    'id': 'id',
+    'geoidheight': 'geoidHeight',
+    'terrainnavd88': 'terrainNAVD88',
+    'terrainwgs84': 'terrainWGS84',
+    'units': 'units',
+    'altitude': 'altitude',
+    'agl': 'AGL',
+    'height_above_takeoff': 'height_above_takeoff',
+    'geom': 'POINT',
+}
+
+class RouteModelLineString(models.Model):
+    objectid = models.IntegerField(null=True)
+    pathcost = models.FloatField(null=True)
+    destid = models.IntegerField(null=True)
+    startid = models.IntegerField(null=True)
+    shape_length = models.FloatField(null=True)
+    geom = models.LineStringField(srid=4326, null=True)  
+
+    def __str__(self):
+        return str(self.objectid)
+
+
 class surfaceHex(models.Model):
     index_field = models.CharField(max_length=254, null=True)
     lulc = models.CharField(max_length=254, null=True)
@@ -70,7 +109,7 @@ class UAVrouteInput(models.Model):
     destid = models.IntegerField(null=True)
     startid = models.IntegerField(null=True)
     shape_length = models.FloatField(null=True)
-    geom = models.MultiLineStringField(srid=4326, null=True)
+    geom = models.MultiLineStringField(srid=4326, null=True)  
 
     def __str__(self):
         return str(self.objectid)

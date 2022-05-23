@@ -1,12 +1,16 @@
 from django.db import router
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UAVgeojsonViewSet, UAVgetCARS
+
+from .views import RouteModelLineView, UAVgeojsonViewSet, UAVgetCARS, RouteOutputPointsView
 
 router= DefaultRouter()
 
 router.register(prefix='UAVrouter', viewset=UAVgeojsonViewSet, basename="UAVroutes")
 router.register(prefix='UAVgetCARS', viewset=UAVgetCARS, basename="UAVgetCARS")
+router.register(prefix='CARSrouteLine', viewset=RouteModelLineView, basename="CARSrouteLine")
+router.register(prefix='CARSpointOutput', viewset=RouteOutputPointsView, basename="CARSpointOutput")
+
 #router.register(prefix='testAPIview', viewset=testAPIview, basename="testAPIview")
 
 urlpatterns = [
