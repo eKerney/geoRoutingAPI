@@ -8,7 +8,8 @@ from convAPI.serializers import UAVgeoJSONserlializer, UserSerializer, GroupSeri
 from convAPI.models import surfaceHex, UAVrouteInput, RouteModelLineString, RouteModelOutputPoints
 from django.shortcuts import get_object_or_404
 import subprocess, sys, os, requests, json, time, pandas as pd
-from CARS import CARS
+from CARSAPI import CARS
+from addUAVparams import addUAVparams
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -138,6 +139,44 @@ class RouteModelLineView(viewsets.ModelViewSet):
         GeoJSONoutput = plan.runGeoTool()
         # GeoJSON = { "type": "FeatureCollection", "features": [] }
         # GeoJSON["features"].append(serializer.data)
+
+        return Response(GeoJSONoutput)
+
+    @action(detail=False, methods=['post'])
+    def toGeoJSON(self, request):
+        # Input parameters
+        serializer = RouteLineSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        z_units, agl = 'm', 100
+        plan = CARS(serializer.data, z_units, agl)
+        GeoJSONoutput = plan.runGeoTool()
+
+        return Response(GeoJSONoutput)
+    
+    @action(detail=False, methods=['post'])
+    def addUAVparams(self, request):
+       # Input parameters
+        data = request.data
+        #data = JSONRenderer().render(data[1])
+        serializer = RouteLineSerializer(data=data[0])
+        if serializer.is_valid():
+           serializer.save()
+        else:
+           return Response({"status": "error", "data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+ 
+        addedParams = addUAVparams(serializer.data, data[1]['z_units'], data[1]['agl'], data[1]['cruiseSpeed'], 
+        data[1]['firmwareType'], data[1]['hoverSpeed'],data[1]['vehicleType'],data[1]['version'])
+        #Run Process
+        addedParams.loadGeoJSONdata()
+        GeoJSON = addedParams.addParams()
+
+        CARSgeo = CARS(GeoJSON, data[1]['z_units'], data[1]['agl'], data[1]['cruiseSpeed'], data[1]['firmwareType'], 
+        data[1]['hoverSpeed'],data[1]['vehicleType'], data[1]['version'], GeoJSON['properties']['homeCoords'])
+        GeoJSONoutput = CARSgeo.runGeoTool()
 
         return Response(GeoJSONoutput)
     

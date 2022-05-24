@@ -10,6 +10,7 @@ router.register(prefix='UAVrouter', viewset=UAVgeojsonViewSet, basename="UAVrout
 router.register(prefix='UAVgetCARS', viewset=UAVgetCARS, basename="UAVgetCARS")
 router.register(prefix='CARSrouteLine', viewset=RouteModelLineView, basename="CARSrouteLine")
 router.register(prefix='CARSpointOutput', viewset=RouteOutputPointsView, basename="CARSpointOutput")
+router.register(prefix='CARS', viewset=RouteModelLineView, basename="CARS")
 
 #router.register(prefix='testAPIview', viewset=testAPIview, basename="testAPIview")
 

@@ -40,13 +40,13 @@ class CARS:
     routes.runGeoTool()
     ''' 
     
-    def __init__(self, geoJSONpath: str, z_units: str, agl: float, outName: str, cruiseSpeed: int, firmwareType: int,
-                 hoverSpeed: int, vehicleType: int, version: int, homeCoords: list, 
+    def __init__(self, geoJSONpath: str, z_units: str, agl: float, cruiseSpeed: int=-1, firmwareType: int=-1,
+                 hoverSpeed: int=-1, vehicleType: int=-1, version: int=-1, homeCoords: list=[-1,-1,-1], 
                  featureType: str='LINESTRING', in_prj: str ='EPSG:4269', in_type: str='ellipsoid',):
         '''Constructor method
         '''
         self.inputPath, self.z_units, self.agl, self.featureType = geoJSONpath, z_units, agl, featureType
-        self.in_prj, self.in_type, self.outName,  self.cruiseSpeed = in_prj, in_type, outName, cruiseSpeed
+        self.in_prj, self.in_type, self.cruiseSpeed = in_prj, in_type, cruiseSpeed
         self.firmwareType, self.hoverSpeed, self.vehicleType, self.version = firmwareType, hoverSpeed, vehicleType, version
         self.homeCoords = homeCoords
         self.runGetToken()
@@ -177,6 +177,12 @@ class CARS:
                     geoJSON['data']['features'][z]['properties']['altitude'] = altitude
                     geoJSON['data']['features'][z]['properties']['AGL'] = self.agl
                     geoJSON['data']['features'][z]['properties']['height_above_takeoff'] = round((self.agl + (feature['properties']['terrainWGS84'] - launchHeight)), 2)
+                    geoJSON['data']['features'][z]['properties']['cruiseSpeed'] = self.cruiseSpeed
+                    geoJSON['data']['features'][z]['properties']['firmwareType'] = self.firmwareType
+                    geoJSON['data']['features'][z]['properties']['hoverSpeed'] = self.hoverSpeed
+                    geoJSON['data']['features'][z]['properties']['vehicleType'] = self.vehicleType
+                    geoJSON['data']['features'][z]['properties']['version'] = self.version
+                    geoJSON['data']['features'][z]['properties']['homeCoords'] = self.homeCoords
                 self.finalGeoJSON.append(geoJSON['data'])
         print(f'Elevation Calculations Attributes Added')
         return self.finalGeoJSON[0]
@@ -190,7 +196,6 @@ class CARS:
             feature['properties'] = point['properties']
         self.geoJSONline['features'].append(feature)
         print(f'self.geoJSONline added')
-
 
     def saveGeoJSON(self):
         '''_summary_
