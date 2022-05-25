@@ -16,8 +16,7 @@ router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
 router.register(r'surface', views.SurfaceViewSet)
-router.register(r'UAVrouteInput', views.UAVrouteInputViewSet)
-router.register(r'UAVgetCARS', views.UAVgetCARS)
+router.register(r'convAPI', views.RouteModelLineView)
 
 
 # # Wire up our API using automatic URL routing.
