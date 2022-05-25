@@ -1,1 +1,1 @@
-web: gunicorn eoRoutingAPI.wsgi --log-file -
+web: gunicorn geoRoutingAPI.wsgi --log-file -
