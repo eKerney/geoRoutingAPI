@@ -145,7 +145,8 @@ class RouteModelLineView(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def toGeoJSON(self, request):
         # Input parameters
-        serializer = RouteLineSerializer(data=request.data)
+        data = request.data
+        serializer = RouteLineSerializer(data=data[0])
         if serializer.is_valid():
             serializer.save()
         else:
@@ -158,10 +159,9 @@ class RouteModelLineView(viewsets.ModelViewSet):
         return Response(GeoJSONoutput)
     
     @action(detail=False, methods=['post'])
-    def addUAVparams(self, request):
-       # Input parameters
+    def toGeoJSONuav(self, request):
+        # Input parameters
         data = request.data
-        #data = JSONRenderer().render(data[1])
         serializer = RouteLineSerializer(data=data[0])
         if serializer.is_valid():
            serializer.save()

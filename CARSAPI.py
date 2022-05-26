@@ -1,13 +1,12 @@
 # install dependencies and python package install function for python-dotenv
 from ensurepip import version
-#import subprocess
+import subprocess
 import sys
 import os
 import requests
 import json
 import pandas as pd
 import time
-#from boto.s3.connection import S3Connection
 
 # def install(package):
 #     subprocess.check_call([sys.executable, "-m", "pip", "install", package])    
@@ -87,17 +86,26 @@ class CARS:
                     f"Unable to get oauth token due to: ({response.status_code}) {response.json()['message']}"
                 )
             return response.json()["data"]["accessToken"]
-
-        # install and load .env
-        # install('python-dotenv')
-        # from dotenv import load_dotenv 
-        # load_dotenv()
-        # # load env keys
+       
+        ## PROD
         client_key = os.environ['CLIENT_SECRET']
         client_id = os.environ['CLIENT_ID']
         api_scope = os.environ['API_SCOPE']
         subscription = os.environ['SUBSCRIPTION']
         url = os.environ['URL']
+
+        ### DEV
+        # install and load .env
+        # install('python-dotenv')
+        # from dotenv import load_dotenv 
+        # load_dotenv()
+        # # load env keys
+        # client_key = os.getenv('CLIENT_SECRET')
+        # client_id = os.getenv('CLIENT_ID')
+        # api_scope = os.getenv('API_SCOPE')
+        # subscription = os.getenv('SUBSCRIPTION')
+        # url = os.getenv('URL')
+
         # obtain token for CARS API request
         token = get_token(client_id, client_key, api_scope, subscription)
         self.subscription_key = subscription
