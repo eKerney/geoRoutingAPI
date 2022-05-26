@@ -51,10 +51,6 @@ class CARS:
         self.homeCoords = homeCoords
         self.runGetToken()
 
-        # "cruiseSpeed": 15, "firmwareType": 12, "hoverSpeed": 5, "items": [],
-        #                      "plannedHomePosition": [45.650961376465304, 45.650961376465304, 358.68],
-        #                      "vehicleType": 2, "version": 2
-
     def runGetToken(self):   
         def get_token(client_id: str, client_key: str, scope: str, subscription_key: str) -> str:
             """
@@ -87,7 +83,7 @@ class CARS:
                 )
             return response.json()["data"]["accessToken"]
        
-        ## PROD
+        ### PROD
         client_key = os.environ['CLIENT_SECRET']
         client_id = os.environ['CLIENT_ID']
         api_scope = os.environ['API_SCOPE']
@@ -95,7 +91,6 @@ class CARS:
         url = os.environ['URL']
 
         ### DEV
-        # install and load .env
         # install('python-dotenv')
         # from dotenv import load_dotenv 
         # load_dotenv()

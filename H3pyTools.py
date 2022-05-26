@@ -55,6 +55,7 @@ class H3dataTools:
         print(f'Loaded GeoJSON: {self.inputPath}')
     
     def geoPointstoH3traverse(self):
+        self.loadedGeoJSON = self.inputPath
         self.geojson = {'type':'FeatureCollection', 'features':[]}
         arrLength = len(self.loadedGeoJSON['features'])
         for i, feature in enumerate(self.loadedGeoJSON['features']):

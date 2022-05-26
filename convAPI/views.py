@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 import subprocess, sys, os, requests, json, time, pandas as pd
 from CARSAPI import CARS
 from addUAVparams import addUAVparams
+from H3pyTools import H3dataTools
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -179,6 +180,17 @@ class RouteModelLineView(viewsets.ModelViewSet):
         GeoJSONoutput = CARSgeo.runGeoTool()
 
         return Response(GeoJSONoutput)
+    
+    @action(detail=False, methods=['post'])
+    def toH3Traversal(self, request):
+        
+        # Input parameters
+        data = request.data
+        newGeo = H3dataTools(data[0], data[1]['hexRes'])
+        #newGeo.loadGeoJSONptsAPI('data\\MDOT_MCS_FWH_H3')
+        newGeo.geoPointstoH3traverse()
+
+        return Response(newGeo.geojson)
     
 class RouteOutputPointsView(viewsets.ModelViewSet):
     """

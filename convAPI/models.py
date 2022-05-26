@@ -127,3 +127,23 @@ uavrouteinput_mapping = {
     'minsimptol': 'MinSimpTol',
     'geom': 'MULTILINESTRING',
 }
+
+# class RouteModelOutputPoints(models.Model):
+#     id = models.CharField(max_length=36, primary_key=True)
+#     geoidheight = models.FloatField(null=True)
+#     terrainnavd88 = models.FloatField(null=True)
+#     terrainwgs84 = models.FloatField(null=True)
+#     units = models.CharField(max_length=5, null=True)
+#     altitude = models.FloatField(null=True)
+#     agl = models.FloatField(null=True)
+#     height_above_takeoff = models.FloatField(null=True)
+#     cruiseSpeed = models.FloatField(null=True)
+#     firmwareType = models.FloatField(null=True)
+#     hoverSpeed = models.FloatField(null=True)
+#     vehicleType = models.FloatField(null=True)
+#     version = models.FloatField(null=True)
+#     homeCoords = models.CharField(max_length=84, null=True)
+#     geom = models.PointField(srid=4326, null=True)
+
+#     def __str__(self):
+#         return str(self.objectid)
