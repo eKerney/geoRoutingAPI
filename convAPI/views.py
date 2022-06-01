@@ -11,6 +11,7 @@ import subprocess, sys, os, requests, json, time, pandas as pd
 from CARSAPI import CARS
 from addUAVparams import addUAVparams
 from H3pyTools import H3dataTools
+from RouteToKML import RouteToKML
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -191,7 +192,29 @@ class RouteModelLineView(viewsets.ModelViewSet):
         newGeo.geoPointstoH3traverse()
 
         return Response(newGeo.geojson)
-    
+
+    @action(detail=False, methods=['post'])
+    def toKMLuav(self, request):
+        
+        # Input parameters
+        data = request.data
+        #inputData = 'data\\UAVflightPath_GeoJSON_05052022085651.geojson'
+        z_units = 'ft'
+        agl = 400
+        outputName = 'UAVflightPath'
+        # Instantiate RouteToKML class
+        routes = RouteToKML(data, z_units, agl, outputName)
+        # Run Process
+        KMLoutput = routes.runGeoTool()
+        #KMLjson = json.loads(KMLoutput)
+        # Input parameters
+        # data = request.data
+        # newGeo = H3dataTools(data[0], data[1]['hexRes'])
+        #newGeo.loadGeoJSONptsAPI('data\\MDOT_MCS_FWH_H3')
+        #newGeo.geoPointstoH3traverse()
+
+        return Response(KMLoutput)  
+
 class RouteOutputPointsView(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
