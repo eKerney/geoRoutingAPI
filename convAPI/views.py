@@ -12,6 +12,7 @@ from CARSAPI import CARS
 from addUAVparams import addUAVparams
 from H3pyTools import H3dataTools
 from RouteToKML import RouteToKML
+from PlanFile import RouteToPlanSimple
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -184,7 +185,6 @@ class RouteModelLineView(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def toH3Traversal(self, request):
-        
         # Input parameters
         data = request.data
         newGeo = H3dataTools(data[0], data[1]['hexRes'])
@@ -195,10 +195,8 @@ class RouteModelLineView(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def toKMLuav(self, request):
-        
         # Input parameters
         data = request.data
-        #inputData = 'data\\UAVflightPath_GeoJSON_05052022085651.geojson'
         z_units = 'ft'
         agl = 400
         outputName = 'UAVflightPath'
@@ -206,14 +204,23 @@ class RouteModelLineView(viewsets.ModelViewSet):
         routes = RouteToKML(data, z_units, agl, outputName)
         # Run Process
         KMLoutput = routes.runGeoTool()
-        #KMLjson = json.loads(KMLoutput)
-        # Input parameters
-        # data = request.data
-        # newGeo = H3dataTools(data[0], data[1]['hexRes'])
-        #newGeo.loadGeoJSONptsAPI('data\\MDOT_MCS_FWH_H3')
-        #newGeo.geoPointstoH3traverse()
-
         return Response(KMLoutput)  
+    
+    @action(detail=False, methods=['post'])
+    def toPlanfile(self, request):
+        # Parse request data, data[0]=GeoJSON LineString Feature, data[1]=PlanFile parameters
+        data = request.data
+        # Add UAV params to GeoJSON LineString, extract home coordinates as first point position
+        routeAddUAV = addUAVparams(data[0], data[1]['z_units'], data[1]['agl'], data[1]['cruiseSpeed'], 
+        data[1]['firmwareType'], data[1]['hoverSpeed'],data[1]['vehicleType'],data[1]['version'])
+        #Run Process
+        GeoJSONuav = routeAddUAV.runGeoTool()
+
+        planFileRoute = RouteToPlanSimple(GeoJSONuav, data[1]['z_units'], data[1]['agl'], data[1]['cruiseSpeed'], data[1]['firmwareType'], 
+        data[1]['hoverSpeed'],data[1]['vehicleType'], data[1]['version'], GeoJSONuav['properties']['homeCoords'])
+        planFileOutput = planFileRoute.runGeoTool()
+        return Response(planFileOutput)
+
 
 class RouteOutputPointsView(viewsets.ModelViewSet):
     """

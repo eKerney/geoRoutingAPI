@@ -7,6 +7,10 @@ class addUAVparams:
         self.GeoJSONinput, self.z_units, self.agl, self.cruiseSpeed = GeoJSONinput, z_units, agl, cruiseSpeed
         self.firmwareType, self.hoverSpeed, self.vehicleType, self.version =  firmwareType, hoverSpeed, vehicleType, version
     
+    def runGeoTool(self):
+        self.loadGeoJSONdata()
+        return self.addParams()
+    
     def loadGeoJSONfile(self):
         f = open(self.GeoJSONinput)
         self.GeoJSON = json.load(f)

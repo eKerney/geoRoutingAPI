@@ -1,51 +1,53 @@
-# install simplekml into active python environment
+# install dependencies and python package install function for python-dotenv
+from ensurepip import version
 import subprocess
 import sys
 import os
 import requests
 import json
+import pandas as pd
+import time
 
 def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])    
-#install('simplekml')
+install('python-dotenv')
 
-import simplekml
-
-class RouteToKML:
+class RouteToPlanSimple:
     '''This class ingests simplified GeoJSON output from the :class: 'CostPathFromSurface' class,
-    first loading the GeoJSON file, then adding CARS elevation data to points via Airspace Link Azure function,
-    next calculating the altitude from the CARS attributes and AGL parameter, then generating a kml file
-    from the leastCostPath with both points, lines, and html popup descriptions. 
-    Dependencies: requests, json, simplekml
-    simplekml is required to generate kml outputs, in notebook run:
-    !pip install simplekml -I
-
+    first loading the GeoJSON LineString file, then adding CARS elevation data to points via Airspace Link 
+    Azure function, next calculating the altitude from the CARS attributes and AGL parameter, then generating 
+    a .waypoints file from the leastCostPath in QGroundControl filw version - QGC WPL 110
+    Dependencies: requests, json, pandas, subprocess, sys, os, python-dotenv
+    python-dot is required to load client credentials from dotenv file in project root directory
+    The tab separated attributes in waypoints export are in the following order:
+    'INDEX', 'CURRENT', 'COORD_FRAME', 'COMMAND', 'PARAM1', 'PARAM2', 'PARAM3', 'PARAM4', 'PARAM5/X/LATITUDE',
+    'PARAM6/Y/LONGITUDE', 'PARAM7/Z/ALTITUDE', 'AUTOCONTINUE'
     :param geoJSONpath: path to GeoJSON file
     :type geoJSONpath: str
     :param z_units: ft or m 
     :type z_units: str
     :param agl: flight altitude Above Ground Level, units specified above
     :type agl: float
-    :param outName: kml output filename
-    :type outName: str
 
     # Example Workflow
     inputData = 'SampleRoutes_v2.geojson'
     z_units = 'ft'
     agl = 400
     outputName = 'PendletonRoutes'
-    routes = RouteToKML(inputData, z_units, agl, outputName)
+    routes = RouteToWaypoints(inputData, z_units, agl, outputName)
     routes.runGeoTool()
     ''' 
-    
-    def __init__(self, geoJSONpath: str, z_units: str, agl: float, outName: str,
+    def __init__(self, geoJSONpath: str, z_units: str, agl: float, cruiseSpeed: int=-1, firmwareType: int=-1,
+                 hoverSpeed: int=-1, vehicleType: int=-1, version: int=-1, homeCoords: list=[-1,-1,-1], 
                  featureType: str='LINESTRING', in_prj: str ='EPSG:4269', in_type: str='ellipsoid',):
         '''Constructor method
         '''
         self.inputPath, self.z_units, self.agl, self.featureType = geoJSONpath, z_units, agl, featureType
-        self.in_prj, self.in_type, self.outName = in_prj, in_type, outName
+        self.in_prj, self.in_type, self.cruiseSpeed = in_prj, in_type, cruiseSpeed
+        self.firmwareType, self.hoverSpeed, self.vehicleType, self.version = firmwareType, hoverSpeed, vehicleType, version
+        self.homeCoords = homeCoords
         self.runGetToken()
-
+    
     def runGetToken(self):   
         def get_token(client_id: str, client_key: str, scope: str, subscription_key: str) -> str:
             """
@@ -97,25 +99,24 @@ class RouteToKML:
         # subscription = os.getenv('SUBSCRIPTION')
         # url = os.getenv('URL')
 
-        # obtain token for CARS API request
-        token = get_token(client_id, client_key, api_scope, subscription)
-        self.subscription_key = subscription
-        self.token = token
-        print(f'Obtained token for Client ID: {client_id}')
+        # # obtain token for CARS API request
+        # token = get_token(client_id, client_key, api_scope, subscription)
+        # self.subscription_key = subscription
+        # self.token = token
+        # print(f'Obtained token for Client ID: {client_id}')
 
     def runGeoTool(self):
         '''Execute all methods in workflow:
         self.loadGeoJSON()          # Loads GeoJSON file generated from :class:'CostPathFromSurface' class
         self.addCARSdata()          # Takes loaded GeoJSON and sends to Airspace Link CARS function which adds elevation attributes
         self.addAglGeoJSON()        # With geoJSONarr from CARS function, calculate flight altitude
-        self.exportToKML()          # Convert GeoJSON Feature Collection(s) into kml points and lines with attributes and add html popup/description
+        self.exportToPlanfile()    # Convert GeoJSON Feature Collection(s) into waypoints export as tab sep text file
         '''        
         self.loadGeoJSON()
         self.addCARSdata()
         self.addAglGeoJSON()
-        kml = self.exportToKML()
-        return kml
- 
+        return self.exportToPlanfile()
+
     def loadGeoJSON(self):
         '''Loads GeoJSON file generated from :class:'CostPathFromSurface' class
         :return: Prints success message with name of loaded GeoJSON e.g.
@@ -127,7 +128,7 @@ class RouteToKML:
         self.loadedGeoJSON = self.inputPath
         #print(f'Loaded GeoJSON: {self.loadedGeoJSON}')
 
-    # send in memory GeoJSON to CARS
+     # send in memory GeoJSON to CARS
     def addCARSdata(self):
         '''Takes loaded GeoJSON and sends to Airspace Link CARS function which adds elevation attributes, 
         :return: Prints success message with provided flight AGL e.g.
@@ -144,12 +145,12 @@ class RouteToKML:
         # Iterate through list of GeoJSON features
 
         #for i, feature in enumerate(self.loadedGeoJSON['features']):
-        print(f'{self.loadedGeoJSON[0]}')
+        #print(f"{self.loadedGeoJSON['geometry']}")
         payload = json.dumps({
             "inVDatum": self.in_type,
             # "in_prj": self.in_prj,
             "zUnits": self.z_units,
-            "geometry": self.loadedGeoJSON[0]['geometry']
+            "geometry": self.loadedGeoJSON['geometry']
         })
         response = requests.request("POST", url, headers=headers, data=payload)
         self.carsGeoJSON = json.loads(response.text)
@@ -179,53 +180,43 @@ class RouteToKML:
         print(f'Elevation Calculations Attributes Added')
     
     # save array of GeoJSON feature collections as KML with formatted attribute table
-    def exportToKML(self):
-        '''Convert GeoJSON Feature Collection(s) into kml points and lines with attributes and add html popup/description
-        :return: Prints success message and named of exported kml file e.g.
-        PendletonRoutes0.kml - Saved Successfully
-        :rtype: none
-        '''         
-        # check if multiple GeoJSON Feature Collections
-        if type(self.finalGeoJSON) is list:
-            # iterate through each GeoJSON
-            for z, geoJSON in enumerate(self.finalGeoJSON):
-                # Create new KML for each GeoJSON Route & new LineString coord list
-                self.kml = simplekml.Kml()
-                lineCoords = []
-                # get conversion factor for KML altitude, value must be in meters
-                self.conv = 1 if self.z_units == 'm' else (1 if self.z_units == 'meters' else .3048)
-                # Loop through each Feature in Feature Collection
-                for i, feat in enumerate(geoJSON['features']):
-                    # Create new KML point for each feature
-                    pnt = self.kml.newpoint(coords=[(feat['geometry']['coordinates'][0], feat['geometry']['coordinates'][1], (feat["properties"]["altitude"] * self.conv))])
-                    # proceeding lines all construct KML/HTML popup for each feature
-                    style1 = '<body style="margin:0px 0px 0px 0px;overflow:auto;background:#FFFFFF;height:100px">'
-                    tableHead = '<table style="width:200px;border:1px solid black;font-family:Arial,Verdana,Times;font-size:14px;text-align:center;border-collapse:collapse;padding:3px 3px 3px 3px">'
-                    table2 = '<table style="width:200px;border:1px solid black;font-family:Arial,Verdana,Times;font-size:12px;text-align:left;border-spacing:0px; padding:3px 3px 3px 3px">'
-                    trHead = '<tr style="line-height:125%text-align:center;font-weight:bold;background:#9CBCE2;">'
-                    trBack = '<tr style="line-height:110%" bgcolor="#D4E4F3">'
-                    table_, tr, tr_, td, td_ = '</table>','<tr style="line-height:110%">','</tr>','<td>','</td>'
-                    id,units,lon,lat= (f'{feat["id"]}'), (f'{feat["properties"]["units"]}'),(f'{round(feat["geometry"]["coordinates"][0],6)}'),(f'{round(feat["geometry"]["coordinates"][1],6)}')
-                    alt, agl, hat = (f'{feat["properties"]["altitude"]}'), (f'{feat["properties"]["AGL"]}'), (f'{feat["properties"]["height_above_takeoff"]}')
-                    line1 = (f"{style1}{tableHead}{trHead}{td}ID: {id}  -  UNITS: {units}{td_}{tr_}")
-                    line2 = (f"{table2}{tr}{td}LON          {td_}{td}{td_}{td}{lon}{td_}{tr_}")
-                    line3 = (f"{trBack}{td}LAT          {td_}{td}{td_}{td}{lat}{td_}{tr_}")
-                    line4 = (f"{tr}{td}Flight Altitude {td_}{td}{td_}{td}{alt}{td_}{tr_}")
-                    line5 = (f"{trBack}{td}AGL          {td_}{td}{td_}{td}{agl}{td_}{tr_}")
-                    line6 = (f"{tr}{td}Height Above Takeoff {td_}{td}{td_}{td}{hat}{td_}{tr_}")
-                    # Combine all of the lines for feature popup
-                    pnt.description = (f'{line1}{line2}{line3}{line4}{line5}{line6}')
-                    pnt.style.iconstyle.icon.href = 'http://maps.google.com/mapfiles/kml/paddle/blu-blank.png'
-                    pnt.altitudemode = simplekml.AltitudeMode.absolute
-                    pnt.style.iconstyle.hotspot = simplekml.HotSpot(x=0.5,y=0)
-                    # collect coordinates to generate supplemental LineString
-                    lineCoords.append((feat["geometry"]["coordinates"][0], feat["geometry"]["coordinates"][1], (feat["properties"]["altitude"] * self.conv)))
-                line = self.kml.newlinestring(name=(f'{self.outName}{z}'), coords=lineCoords)
-                # line style formatting
-                line.style.linestyle.color,line.altitudemode,line.style.linestyle.width = 'ffff7000',simplekml.AltitudeMode.absolute,3
-                # Export as KML string to return via API
-                self.kmlString = self.kml.kml()
-                return self.kmlString
-                #self.kml.save(f'{self.outName}{z}.kml')
-                #print(f'{self.outName}{z}.kml - Saved Successfully')
+    def exportToPlanfile(self):
+            '''Convert GeoJSON Feature Collection(s) into .plan QGroundControl format - 
+            '''         
+            # check if multiple GeoJSON Feature Collections
+            if type(self.finalGeoJSON) is list:
+                # iterate through each GeoJSON
+                for z, geoJSON in enumerate(self.finalGeoJSON):
+                    ### "fileType", "geoFence", "groundStation", "mission", "rallyPoints", "version"
+                    self.plan = {
+                        "fileType": "Plan", 
+                        "geoFence": {"polygon": [], "version": 1},\
+                        "groundStation": "QGroundControl", 
+                        "mission": { 
+                            "cruiseSpeed": self.cruiseSpeed, "firmwareType": self.firmwareType, 
+                            "hoverSpeed": self.hoverSpeed, "items": [],
+                             "plannedHomePosition": [self.homeCoords[0], self.homeCoords[1], self.homeCoords[2]],
+                             "vehicleType": self.vehicleType, "version": self.version
+                            },
+                        "rallyPoints": { "points": [], "version": 1 },
+                        "version": 1 
+                    }
+                    for i, feat in enumerate(geoJSON['features']):
+                        command = 22 if i == 0 else 16
+                        #print(f'{i} - {command} - {len(geoJSON["features"])-1}')
+                        command = 21 if i == (len(geoJSON['features'])-1) else command 
+                        #print(f'{i} - {command} - {len(geoJSON["features"])-1}')
+                        item = { "autoContinue": True, "command": command, "doJumpId": i+1, "frame": 3,
+                            "params": [ 0, 0, 0, 0.0, feat['geometry']['coordinates'][1], feat['geometry']['coordinates'][0],
+                                        feat['properties']['AGL'] ],
+                            "type": "SimpleItem"
+                        }
+                        self.plan['mission']['items'].append(item)
+                    print(f'PlanFile Output Generated')  
+                    return self.plan                      
+                    # json_object = json.dumps(self.plan, indent = 3)
+                    # with open((f'{self.outName}.plan'), "w") as outfile:
+                    #     outfile.write(json_object)
+                    # print(f'{self.outName}.plan successfully generated')
+
 
